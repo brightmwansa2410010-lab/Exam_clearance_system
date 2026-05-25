@@ -1,12 +1,5 @@
-function statusPill(status) {
-  let cls = 'badge badge-pending';
-  if (status === 'approved') cls = 'badge badge-approved';
-  else if (status === 'rejected') cls = 'badge badge-rejected';
-  return <span className={cls}>{status}</span>;
-}
-
 function AccountsDashboard({ requests, onAction }) {
-  const pending = requests.filter(r => r.accounts_status !== 'approved' && r.accounts_status !== 'rejected').length;
+  const pending = requests.filter(r => r.accounts_status === 'pending').length;
 
   return (
     <div>
@@ -14,7 +7,7 @@ function AccountsDashboard({ requests, onAction }) {
         <div className="dashboard-header">
           <div>
             <div className="card-title">Accounts officer</div>
-            <div className="subtitle">Clearance requests — Semester 1, 2025/2026</div>
+            <div className="subtitle">Clearance requests</div>
           </div>
           <div className="badge badge-pending">{pending} pending</div>
         </div>
@@ -35,14 +28,22 @@ function AccountsDashboard({ requests, onAction }) {
                 <div>{request.student_number || '-'}</div>
                 <div>{request.student_name}</div>
                 <div>{request.programme}</div>
-                <div>{statusPill(request.accounts_status)}</div>
+                <div>
+                  <span className={`badge badge-${request.accounts_status}`}>{request.accounts_status}</span>
+                </div>
                 <div className="button-group">
-                  <button className="button button-success button-sm" onClick={() => onAction(request.id, 'approve')}>
-                    Approve
-                  </button>
-                  <button className="button button-error button-sm" onClick={() => onAction(request.id, 'reject')}>
-                    Reject
-                  </button>
+                  {request.accounts_status === 'pending' ? (
+                    <>
+                      <button className="button button-success button-sm" onClick={() => onAction(request.id, 'approve')}>
+                        Approve
+                      </button>
+                      <button className="button button-error button-sm" onClick={() => onAction(request.id, 'reject')}>
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ color: '#777', fontSize: '0.85rem' }}>Done</span>
+                  )}
                 </div>
               </div>
             ))}

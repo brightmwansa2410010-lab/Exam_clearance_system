@@ -1,21 +1,14 @@
 import { jsPDF } from 'jspdf';
 
-function statusPill(status) {
-  let cls = 'badge badge-pending';
-  if (status === 'approved') cls = 'badge badge-approved';
-  else if (status === 'rejected') cls = 'badge badge-rejected';
-  return <span className={cls}>{status}</span>;
-}
-
 function ExaminerDashboard({ requests, onAction }) {
   const filtered = requests.filter((request) => request.accounts_status === 'approved');
-  const awaiting = filtered.filter(r => r.examiner_status !== 'approved' && r.examiner_status !== 'rejected').length;
+  const awaiting = filtered.filter(r => r.examiner_status === 'pending').length;
   const approved = filtered.filter(r => r.examiner_status === 'approved').length;
   const rejected = filtered.filter(r => r.examiner_status === 'rejected').length;
 
   const handleExport = () => {
     if (filtered.length === 0) {
-      alert('No approved requests to export');
+      alert('No requests to export');
       return;
     }
 
@@ -48,36 +41,27 @@ function ExaminerDashboard({ requests, onAction }) {
     doc.text('Accounts', col5, tableTop);
     doc.text('Examiner', col6, tableTop);
 
-    doc.setDrawColor(200);
     doc.line(margin, tableTop + 2, pageWidth - margin, tableTop + 2);
 
     doc.setFont(undefined, 'normal');
     doc.setFontSize(8);
     let yPos = tableTop + 8;
-    const lineHeight = 6;
-    const pageBreakThreshold = pageHeight - 20;
+    const rowH = 6;
 
-    filtered.forEach((request, index) => {
-      if (yPos > pageBreakThreshold) {
+    filtered.forEach((request) => {
+      if (yPos > pageHeight - 20) {
         doc.addPage();
         yPos = margin + 10;
       }
 
-      const studentId = String(request.student_number || request.id).substring(0, 15);
-      const name = String(request.student_name).substring(0, 20);
-      const programme = String(request.programme).substring(0, 15);
-      const semester = String(request.semester).substring(0, 12);
-      const accountsStatus = String(request.accounts_status).substring(0, 8);
-      const examinerStatus = String(request.examiner_status).substring(0, 8);
+      doc.text(String(request.student_number || request.id).substring(0, 15), col1, yPos);
+      doc.text(String(request.student_name).substring(0, 20), col2, yPos);
+      doc.text(String(request.programme).substring(0, 15), col3, yPos);
+      doc.text(String(request.semester).substring(0, 12), col4, yPos);
+      doc.text(String(request.accounts_status).substring(0, 8), col5, yPos);
+      doc.text(String(request.examiner_status).substring(0, 8), col6, yPos);
 
-      doc.text(studentId, col1, yPos);
-      doc.text(name, col2, yPos);
-      doc.text(programme, col3, yPos);
-      doc.text(semester, col4, yPos);
-      doc.text(accountsStatus, col5, yPos);
-      doc.text(examinerStatus, col6, yPos);
-
-      yPos += lineHeight;
+      yPos += rowH;
     });
 
     doc.setFontSize(8);
@@ -97,7 +81,7 @@ function ExaminerDashboard({ requests, onAction }) {
         <div className="dashboard-header">
           <div>
             <div className="card-title">Examiner</div>
-            <div className="subtitle">Final approvals — Semester 1, 2025/2026</div>
+            <div className="subtitle">Final approvals</div>
           </div>
           <button className="button button-outline" onClick={handleExport}>
             ⬇ Export exam list
@@ -106,7 +90,7 @@ function ExaminerDashboard({ requests, onAction }) {
 
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-label">Awaiting approval</div>
+            <div className="stat-label">Awaiting</div>
             <div className="stat-value">{awaiting}</div>
           </div>
           <div className="stat-card">
@@ -120,7 +104,7 @@ function ExaminerDashboard({ requests, onAction }) {
         </div>
 
         {filtered.length === 0 ? (
-          <p>No approved student requests available yet.</p>
+          <p>No requests awaiting your review.</p>
         ) : (
           <div className="table">
             <div className="table-row table-row-5 table-header">
@@ -134,15 +118,25 @@ function ExaminerDashboard({ requests, onAction }) {
               <div className="table-row table-row-5" key={request.id}>
                 <div>{request.student_number || request.id}</div>
                 <div>{request.student_name}</div>
-                <div>{statusPill(request.accounts_status)}</div>
-                <div>{statusPill(request.examiner_status)}</div>
+                <div>
+                  <span className="badge badge-approved">{request.accounts_status}</span>
+                </div>
+                <div>
+                  <span className={`badge badge-${request.examiner_status}`}>{request.examiner_status}</span>
+                </div>
                 <div className="button-group">
-                  <button className="button button-success button-sm" onClick={() => onAction(request.id, 'approve')}>
-                    Approve
-                  </button>
-                  <button className="button button-error button-sm" onClick={() => onAction(request.id, 'reject')}>
-                    Reject
-                  </button>
+                  {request.examiner_status === 'pending' ? (
+                    <>
+                      <button className="button button-success button-sm" onClick={() => onAction(request.id, 'approve')}>
+                        Approve
+                      </button>
+                      <button className="button button-error button-sm" onClick={() => onAction(request.id, 'reject')}>
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ color: '#777', fontSize: '0.85rem' }}>Done</span>
+                  )}
                 </div>
               </div>
             ))}
