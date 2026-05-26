@@ -20,6 +20,10 @@ export async function apiFetch(endpoint, token, options = {}) {
       body: isFormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
     });
 
+    if (response.status === 401 || response.status === 403) {
+      return { expired: true, error: 'Session expired. Please log in again.' };
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

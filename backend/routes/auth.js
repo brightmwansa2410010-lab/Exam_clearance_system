@@ -18,34 +18,43 @@ const authLimiter = rateLimit({
 router.use(authLimiter);
 
 router.post('/register', validateRegisterInput, async (req, res) => {
+  const client = await db.pool.connect();
   try {
     const { name, email, password, role, student_id } = req.body;
 
+    await client.query('BEGIN');
+
     if (student_id) {
-      const existing = await db.query('SELECT id FROM users WHERE student_id = $1', [student_id]);
+      const existing = await client.query('SELECT id FROM users WHERE student_id = $1', [student_id]);
       if (existing.rows.length > 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Student ID already registered' });
       }
     }
     if (email) {
-      const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+      const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
       if (existing.rows.length > 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Email already registered' });
       }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await db.query(
+    await client.query(
       'INSERT INTO users (name, email, password, role, student_id) VALUES ($1, $2, $3, $4, $5)',
       [name, email, passwordHash, role, student_id || null]
     );
 
+    await client.query('COMMIT');
     res.status(201).json({ message: 'Registration successful' });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error(error);
     res.status(500).json({ error: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 

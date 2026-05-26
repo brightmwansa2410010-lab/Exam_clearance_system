@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
 
     if (role === 'student') {
       result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number
+        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
          FROM requests r
          JOIN users u ON r.student_id = u.id
          WHERE r.student_id = $1
@@ -24,14 +25,16 @@ router.get('/', async (req, res) => {
       );
     } else if (role === 'accounts') {
       result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number
+        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
          FROM requests r
          JOIN users u ON r.student_id = u.id
          ORDER BY r.id DESC`
       );
     } else if (role === 'examiner') {
       result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number
+        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
          FROM requests r
          JOIN users u ON r.student_id = u.id
          WHERE r.accounts_status = 'approved'
@@ -169,75 +172,81 @@ router.get('/:id/slip', async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=exam-slip-${request.id}.pdf`);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(res);
 
-    const green = '#1d7f1d';
-    const darkBg = '#2d2d2d';
-    const muted = '#a9a9a9';
-    const accent = '#ffffff';
+    const pageW = doc.page.width;
+    const pageH = doc.page.height;
+    const darkGreen = '#0f4c0f';
+    const cream = '#f9f5e8';
+    const beige = '#e8e0cc';
+    const white = '#ffffff';
+    const dark = '#1a1a1a';
+    const muted = '#666666';
 
-    doc.rect(0, 0, doc.page.width, 100).fill(green);
-    doc.fillColor('white').font('Helvetica-Bold').fontSize(22).text('✔ Cleared for exam', 50, 30);
-    doc.font('Helvetica').fontSize(12).fillColor('#e6f5e6').text('Both approvals confirmed', 50, 60);
+    doc.rect(0, 0, pageW, pageH).fill(cream);
 
-    const cardY = 120;
+    doc.rect(0, 0, pageW, 85).fill(darkGreen);
+    doc.fillColor(white).font('Times-Bold').fontSize(32).text('ZUCT', 50, 18);
+    doc.fillColor('#c8e6c9').font('Times-Roman').fontSize(9).text('ZAMBIA UNIVERSITY COLLEGE OF TECHNOLOGY', 50, 56);
+
+    doc.fillColor(white).font('Helvetica-Bold').fontSize(14).text('CLEARED', pageW - 120, 30);
+
+    doc.rect(0, 85, pageW, 33).fill(beige);
+    doc.fillColor(dark).font('Helvetica-Bold').fontSize(11).text('EXAM CLEARANCE SLIP', 50, 93);
+    doc.fillColor(dark).font('Helvetica').fontSize(9).text(request.semester, pageW - 170, 93, { width: 120, align: 'right' });
+    doc.strokeColor('#c0b8a0').lineWidth(0.5).moveTo(50, 117).lineTo(pageW - 50, 117).stroke();
+
     const cardX = 50;
-    const cardW = doc.page.width - cardX * 2;
-    const cardH = 330;
-    doc.roundedRect(cardX, cardY, cardW, cardH, 12).fill(darkBg);
+    const cardY = 138;
+    const cardW = pageW - cardX * 2;
+    const cardH = 210;
+    doc.fillColor(white);
+    doc.roundedRect(cardX, cardY, cardW, cardH, 10).fill();
 
-    const avatarX = cardX + 45;
-    const avatarY = cardY + 45;
-    const avatarR = 35;
-    doc.circle(avatarX, avatarY, avatarR).fill('#3f5a82');
+    const avatarX = cardX + 42;
+    const avatarY = cardY + 42;
+    const avatarR = 30;
+    doc.fillColor(darkGreen);
+    doc.circle(avatarX, avatarY, avatarR).fill();
     const initials = request.student_name
       ? request.student_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
       : 'ST';
-    doc.fillColor('white').font('Helvetica-Bold').fontSize(18).text(initials, avatarX - 13, avatarY - 10);
+    doc.fillColor(white).font('Times-Bold').fontSize(16).text(initials, avatarX - 12, avatarY - 10);
 
-    const nameX = avatarX + avatarR + 22;
-    doc.fillColor(accent).font('Helvetica-Bold').fontSize(20).text(request.student_name, nameX, avatarY - 20);
-    doc.fillColor(muted).font('Helvetica').fontSize(12).text(`Student ID: ${request.student_number || 'N/A'}`, nameX, avatarY + 6);
+    const nameX = avatarX + avatarR + 20;
+    doc.fillColor(dark).font('Times-Bold').fontSize(16).text(request.student_name, nameX, avatarY - 18);
+    doc.fillColor(muted).font('Courier').fontSize(10).text(`ID:  ${request.student_number || 'N/A'}`, nameX, avatarY + 6);
+    doc.fillColor(muted).font('Courier').fontSize(10).text(`PGM: ${request.programme}`, nameX, avatarY + 22);
 
-    doc.strokeColor('#444').lineWidth(1).moveTo(cardX + 30, avatarY + 55).lineTo(cardX + cardW - 30, avatarY + 55).stroke();
+    doc.strokeColor('#ddd').lineWidth(0.5);
+    doc.moveTo(cardX + 30, avatarY + 55).lineTo(cardX + cardW - 30, avatarY + 55).stroke();
 
-    const labelX = cardX + 40;
-    const valueX = cardX + cardW - 180;
-    let rowY = avatarY + 80;
-    const lineHeight = 30;
+    const rowX = cardX + 30;
+    let rowY = avatarY + 78;
+    const lineH = 32;
 
-    doc.fillColor(muted).font('Helvetica').fontSize(12).text('Programme', labelX, rowY);
-    doc.fillColor(accent).font('Helvetica-Bold').fontSize(12).text(request.programme, valueX, rowY, { width: 140, align: 'right' });
-    rowY += lineHeight;
+    const rows = [
+      { label: 'Accounts', value: request.accounts_status, color: request.accounts_status === 'approved' ? darkGreen : '#e6a23c' },
+      { label: 'Examiner', value: request.examiner_status, color: request.examiner_status === 'approved' ? darkGreen : '#e6a23c' },
+    ];
 
-    doc.fillColor(muted).font('Helvetica').fontSize(12).text('Semester', labelX, rowY);
-    doc.fillColor(accent).font('Helvetica-Bold').fontSize(12).text(request.semester, valueX, rowY, { width: 140, align: 'right' });
-    rowY += lineHeight;
+    rows.forEach((r) => {
+      doc.fillColor(muted).font('Courier').fontSize(10).text(r.label, rowX, rowY + 4);
+      const badgeW = 110;
+      doc.fillColor(r.color);
+      doc.roundedRect(cardX + cardW - 30 - badgeW, rowY, badgeW, 24, 6).fill();
+      doc.fillColor(white).font('Helvetica-Bold').fontSize(9).text(
+        r.value === 'approved' ? 'APPROVED' : r.value.toUpperCase(),
+        cardX + cardW - 30 - badgeW + 12, rowY + 6
+      );
+      rowY += lineH;
+    });
 
-    const badgeColor = request.accounts_status === 'approved' ? green : '#e6a23c';
-    const badgeColor2 = request.examiner_status === 'approved' ? green : '#e6a23c';
-
-    doc.fillColor(muted).font('Helvetica').fontSize(12).text('Accounts', labelX, rowY);
-    doc.roundedRect(valueX, rowY - 4, 92, 24, 8).fill(badgeColor);
-    doc.fillColor('white').font('Helvetica-Bold').fontSize(10).text(
-      request.accounts_status === 'approved' ? 'Approved' : request.accounts_status,
-      valueX + 10, rowY - 1
-    );
-    rowY += lineHeight;
-
-    doc.fillColor(muted).font('Helvetica').fontSize(12).text('Examiner', labelX, rowY);
-    doc.roundedRect(valueX, rowY - 4, 92, 24, 8).fill(badgeColor2);
-    doc.fillColor('white').font('Helvetica-Bold').fontSize(10).text(
-      request.examiner_status === 'approved' ? 'Approved' : request.examiner_status,
-      valueX + 10, rowY - 1
-    );
-
-    const scannedDate = new Date();
-    const timeString = scannedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    const dateString = scannedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    const scannedText = `Scanned at ${timeString} · ${dateString}`;
-    doc.fillColor(muted).font('Helvetica').fontSize(10).text(scannedText, cardX + 20, cardY + cardH + 20, { width: cardW - 40, align: 'center' });
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    doc.fillColor(muted).font('Courier').fontSize(8).text(`Issued: ${dateStr} at ${timeStr}`, 50, pageH - 40, { align: 'center' });
 
     doc.end();
   } catch (error) {

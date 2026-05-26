@@ -13,6 +13,25 @@ function App() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const payload = parsed.token ? JSON.parse(atob(parsed.token.split('.')[1])) : null;
+        if (payload && payload.exp * 1000 > Date.now()) {
+          setUser(parsed.user);
+          setToken(parsed.token);
+        } else {
+          window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
+      } catch {
+        window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || !token) return;
     loadRequests();
@@ -36,7 +55,9 @@ function App() {
     setLoading(true);
     const data = await apiFetch('/requests', token, { method: 'GET' });
     setLoading(false);
-    if (data.error) {
+    if (data.expired) {
+      logout();
+    } else if (data.error) {
       setError(data.error);
     } else if (data.requests) {
       setRequests(data.requests);
@@ -60,8 +81,6 @@ function App() {
       return false;
     }
 
-    // If registering, the server returns { message } not { token, user }.
-    // So after successful registration, auto-login the user.
     if (isRegister) {
       const loginData = await apiFetch('/auth/login', '', {
         method: 'POST',
@@ -95,10 +114,7 @@ function App() {
       method: 'POST',
       body: { programme, semester },
     });
-    if (data.error) {
-      setError(data.error);
-      return false;
-    }
+    if (data.error) return false;
     await loadRequests();
     return true;
   };
@@ -108,10 +124,7 @@ function App() {
       method: 'PATCH',
       body: { requestId, action },
     });
-    if (data.error) {
-      setError(data.error);
-      return false;
-    }
+    if (data.error) return false;
     await loadRequests();
     return true;
   };
@@ -127,15 +140,11 @@ function App() {
       method: 'PATCH',
       body: formData,
     });
-    if (data.error) {
-      setError(data.error);
-      return false;
-    }
+    if (data.error) return false;
 
     const updatedUser = { ...user, student_id: studentIdNumber };
     setUser(updatedUser);
     window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ user: updatedUser, token }));
-
     return true;
   };
 
