@@ -13,36 +13,37 @@ router.get('/', async (req, res) => {
     const { id, role } = req.user;
     let result;
 
-    if (role === 'student') {
-      result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
-         FROM requests r
-         JOIN users u ON r.student_id = u.id
-         WHERE r.student_id = $1
-         ORDER BY r.id DESC`,
-        [id]
-      );
-    } else if (role === 'accounts') {
-      result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
-         FROM requests r
-         JOIN users u ON r.student_id = u.id
-         ORDER BY r.id DESC`
-      );
-    } else if (role === 'examiner') {
-      result = await db.query(
-        `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                u.passport_photo_url, u.nrc_front_url, u.nrc_back_url
-         FROM requests r
-         JOIN users u ON r.student_id = u.id
-         WHERE r.accounts_status = 'approved'
-         ORDER BY r.id DESC`
-      );
-    } else {
-      return res.status(403).json({ error: 'Unknown role.' });
-    }
+     if (role === 'student') {
+       result = await db.query(
+         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
+                 u.study_mode, u.gender, r.courses_examined
+          FROM requests r
+          JOIN users u ON r.student_id = u.id
+          WHERE r.student_id = $1
+          ORDER BY r.id DESC`,
+         [id]
+       );
+     } else if (role === 'accounts') {
+       result = await db.query(
+         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
+                 u.study_mode, u.gender, r.courses_examined
+          FROM requests r
+          JOIN users u ON r.student_id = u.id
+          ORDER BY r.id DESC`
+       );
+     } else if (role === 'examiner') {
+       result = await db.query(
+         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
+                 u.study_mode, u.gender, r.courses_examined
+          FROM requests r
+          JOIN users u ON r.student_id = u.id
+          WHERE r.accounts_status = 'approved'
+          ORDER BY r.id DESC`
+       );
+     }
 
     res.json({ requests: result.rows });
   } catch (error) {
@@ -218,9 +219,11 @@ router.get('/:id/slip', async (req, res) => {
     doc.fillColor(dark).font('Times-Bold').fontSize(16).text(request.student_name, nameX, avatarY - 18);
     doc.fillColor(muted).font('Courier').fontSize(10).text(`ID:  ${request.student_number || 'N/A'}`, nameX, avatarY + 6);
     doc.fillColor(muted).font('Courier').fontSize(10).text(`PGM: ${request.programme}`, nameX, avatarY + 22);
+    doc.fillColor(muted).font('Courier').fontSize(10).text(`MODE: ${request.study_mode || 'N/A'}`, nameX, avatarY + 38);
+    doc.fillColor(muted).font('Courier').fontSize(10).text(`GENDER: ${request.gender || 'N/A'}`, nameX, avatarY + 54);
 
     doc.strokeColor('#ddd').lineWidth(0.5);
-    doc.moveTo(cardX + 30, avatarY + 55).lineTo(cardX + cardW - 30, avatarY + 55).stroke();
+    doc.moveTo(cardX + 30, avatarY + 75).lineTo(cardX + cardW - 30, avatarY + 75).stroke();
 
     const rowX = cardX + 30;
     let rowY = avatarY + 78;
@@ -242,6 +245,11 @@ router.get('/:id/slip', async (req, res) => {
       );
       rowY += lineH;
     });
+
+    // Courses examined row
+    doc.fillColor(muted).font('Courier').fontSize(10).text('COURSES', rowX, rowY + 4);
+    doc.fillColor(dark).font('Courier').fontSize(10).text(request.courses_examined || 'N/A', cardX + cardW - 30, rowY + 4, { width: 140, align: 'right' });
+    rowY += lineH;
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });

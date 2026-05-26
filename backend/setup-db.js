@@ -16,17 +16,23 @@ function makeClient(database) {
 async function runSchema(client) {
   const schema = fs.readFileSync(path.join(__dirname, 'migrations', 'schema.sql'), 'utf8');
   await client.query(schema);
-  await client.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS student_id TEXT,
-    ADD COLUMN IF NOT EXISTS passport_photo_url TEXT,
-    ADD COLUMN IF NOT EXISTS nrc_front_url TEXT,
-    ADD COLUMN IF NOT EXISTS nrc_back_url TEXT,
-    ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN DEFAULT FALSE;
-  `);
-  await client.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS users_student_id_unique_idx ON users(student_id);
-  `);
+    await client.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS student_id TEXT,
+      ADD COLUMN IF NOT EXISTS passport_photo_url TEXT,
+      ADD COLUMN IF NOT EXISTS nrc_front_url TEXT,
+      ADD COLUMN IF NOT EXISTS nrc_back_url TEXT,
+      ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS study_mode TEXT,
+      ADD COLUMN IF NOT EXISTS gender TEXT;
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS users_student_id_unique_idx ON users(student_id);
+    `);
+    await client.query(`
+      ALTER TABLE requests
+      ADD COLUMN IF NOT EXISTS courses_examined TEXT;
+    `);
   console.log('✓ Schema loaded successfully');
 }
 

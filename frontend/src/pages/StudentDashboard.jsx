@@ -9,6 +9,8 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
   const [passportPhoto, setPassportPhoto] = useState(null);
   const [nrcFront, setNrcFront] = useState(null);
   const [nrcBack, setNrcBack] = useState(null);
+  const [studyMode, setStudyMode] = useState('');
+  const [gender, setGender] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
 
   const handleSubmit = async (event) => {
@@ -52,6 +54,26 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
           <label className="field">
             <span>Student ID</span>
             <input value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="e.g. 2024001" required />
+          </label>
+          <label className="field">
+            <span>Study Mode</span>
+            <select value={studyMode} onChange={(e) => setStudyMode(e.target.value)}>
+              <option value="">-- Select Study Mode --</option>
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Distance Learning">Distance Learning</option>
+              <option value="Evening">Evening</option>
+              <option value="Weekend">Weekend</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Gender</span>
+            <select value={gender} onChange={(e) => setGender(e.target.value)}>
+              <option value="">-- Select Gender --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
           </label>
           <label className="field">
             <span>Passport photo</span>

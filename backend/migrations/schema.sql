@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
   passport_photo_url TEXT,
   nrc_front_url TEXT,
   nrc_back_url TEXT,
-  profile_complete BOOLEAN DEFAULT FALSE
+  profile_complete BOOLEAN DEFAULT FALSE,
+  study_mode TEXT,
+  gender TEXT
 );
 
 CREATE TABLE IF NOT EXISTS requests (
@@ -20,5 +22,6 @@ CREATE TABLE IF NOT EXISTS requests (
   semester TEXT NOT NULL,
   accounts_status TEXT NOT NULL DEFAULT 'pending',
   examiner_status TEXT NOT NULL DEFAULT 'pending',
-  status TEXT NOT NULL DEFAULT 'pending'
+  status TEXT NOT NULL DEFAULT 'pending',
+  courses_examined TEXT
 );

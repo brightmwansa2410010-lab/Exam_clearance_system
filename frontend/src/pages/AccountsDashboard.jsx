@@ -28,18 +28,11 @@ function AccountsDashboard({ requests, onAction }) {
             {requests.map((request) => (
               <div className="table-row table-row-5" key={request.id}>
                 <div>{request.student_number || '-'}</div>
-                <div>
-                  {request.student_name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {request.passport_photo_url && (
-                    <span style={{ marginLeft: 8 }}>
-                      <a href={`${apiUrl}${request.passport_photo_url}`} target="_blank" rel="noopener noreferrer" style={{ color: '#7aa2ff', fontSize: '0.75rem', textDecoration: 'none' }}>
-                        [photo]
-                      </a>
-                      <a href={`${apiUrl}${request.nrc_front_url}`} target="_blank" rel="noopener noreferrer" style={{ color: '#7aa2ff', fontSize: '0.75rem', textDecoration: 'none', marginLeft: 4 }}>
-                        [nrc]
-                      </a>
-                    </span>
+                    <img src={`${apiUrl}${request.passport_photo_url}`} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
                   )}
+                  {request.student_name}
                 </div>
                 <div>{request.programme}</div>
                 <div>
