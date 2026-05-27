@@ -16,7 +16,7 @@ function Login({ onLogin, error }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    await onLogin(email, password, isRegister, name, role, studentId);
+    await onLogin(email, password, isRegister, name, role);
   };
 
   return (
@@ -34,12 +34,7 @@ function Login({ onLogin, error }) {
           </label>
         )}
 
-        {isRegister && role === 'student' && (
-          <label className="field">
-            <span>Student ID</span>
-            <input value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="e.g. 2024001 or Acc12345" />
-          </label>
-        )}
+        
 
         <label className="field">
           <span>Email</span>

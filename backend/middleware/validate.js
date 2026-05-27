@@ -21,13 +21,13 @@ function validateRegisterInput(req, res, next) {
 }
 
 function validateLoginInput(req, res, next) {
-  const { email, student_id, password } = req.body;
+  const { email, password } = req.body;
 
   if (!password || typeof password !== 'string') {
     return res.status(400).json({ error: 'Password is required.' });
   }
-  if (!email && !student_id) {
-    return res.status(400).json({ error: 'Email or Student ID is required.' });
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: 'A valid email is required.' });
   }
 
   next();

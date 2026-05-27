@@ -60,19 +60,17 @@ router.post('/register', validateRegisterInput, async (req, res) => {
 
 router.post('/login', validateLoginInput, async (req, res) => {
   try {
-    const { email, password, student_id } = req.body;
+    const { email, password } = req.body;
 
     let result;
-    if (student_id) {
-      result = await db.query(
-        'SELECT id, name, email, password, role, student_id FROM users WHERE student_id = $1',
-        [student_id]
-      );
-    } else {
+    if (email) {
       result = await db.query(
         'SELECT id, name, email, password, role, student_id FROM users WHERE email = $1',
         [email]
       );
+    } else {
+      // This case shouldn't happen due to validation, but keep for safety
+      return res.status(400).json({ error: 'Email is required.' });
     }
 
     const user = result.rows[0];
