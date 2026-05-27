@@ -13,9 +13,6 @@ function validateRegisterInput(req, res, next) {
   if (!['student', 'accounts', 'examiner'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role.' });
   }
-  if (role === 'student' && (!student_id || String(student_id).trim().length < 1)) {
-    return res.status(400).json({ error: 'Student ID is required for students.' });
-  }
 
   next();
 }
@@ -37,10 +34,10 @@ function validateRequestInput(req, res, next) {
   const { programme, semester } = req.body;
 
   if (!programme || typeof programme !== 'string' || programme.trim().length < 2) {
-    return res.status(400).json({ error: 'Programme is required (min 2 characters).' });
+    return res.status(400).json({ error: 'Programme is required (min 2 characters).' );
   }
   if (!semester || typeof semester !== 'string' || semester.trim().length < 2) {
-    return res.status(400).json({ error: 'Semester is required.' });
+    return res.status(400).json({ error: 'Semester is required.' );
   }
 
   next();
@@ -50,10 +47,10 @@ function validateApprovalInput(req, res, next) {
   const { requestId, action } = req.body;
 
   if (!requestId || typeof requestId !== 'number') {
-    return res.status(400).json({ error: 'Valid requestId is required.' });
+    return res.status(400).json({ error: 'Valid requestId is required.' );
   }
   if (!['approve', 'reject'].includes(action)) {
-    return res.status(400).json({ error: 'Action must be "approve" or "reject".' });
+    return res.status(400).json({ error: 'Action must be "approve" or "reject".' );
   }
 
   next();
