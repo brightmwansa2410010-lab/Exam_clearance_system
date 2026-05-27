@@ -7,8 +7,11 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
 
   const [studentId, setStudentId] = useState(user?.student_id || '');
   const [passportPhoto, setPassportPhoto] = useState(null);
+  const [passportPhotoPreview, setPassportPhotoPreview] = useState(null);
   const [nrcFront, setNrcFront] = useState(null);
+  const [nrcFrontPreview, setNrcFrontPreview] = useState(null);
   const [nrcBack, setNrcBack] = useState(null);
+  const [nrcBackPreview, setNrcBackPreview] = useState(null);
   const [studyMode, setStudyMode] = useState('');
   const [gender, setGender] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
@@ -77,15 +80,64 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
           </label>
           <label className="field">
             <span>Passport photo</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => setPassportPhoto(e.target.files[0])} />
+            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
+              const file = e.target.files[0];
+              setPassportPhoto(file);
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => setPassportPhotoPreview(reader.result);
+                reader.readAsDataURL(file);
+              } else {
+                setPassportPhotoPreview(null);
+              }
+            }} />
+            {passportPhotoPreview && (
+              <div className="photo-preview">
+                <img src={passportPhotoPreview} alt="Passport preview" />
+              </div>
+            )}
           </label>
           <label className="field">
             <span>NRC front side</span>
-            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={(e) => setNrcFront(e.target.files[0])} />
+            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
+              const file = e.target.files[0];
+              setNrcFront(file);
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => setNrcFrontPreview(reader.result);
+                reader.readAsDataURL(file);
+              } else {
+                setNrcFrontPreview(null);
+              }
+            }} />
+            {nrcFrontPreview && (
+              <div className="photo-preview">
+                <img src={nrcFrontPreview} alt="NRC front preview" />
+              </div>
+            )}
           </label>
           <label className="field">
             <span>NRC back side</span>
-            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={(e) => setNrcBack(e.target.files[0])} />
+            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
+              const file = e.target.files[0];
+              setNrcBack(file);
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => setNrcBackPreview(reader.result);
+                reader.readAsDataURL(file);
+              } else {
+                setNrcBackPreview(null);
+              }
+            }} />
+            {nrcBackPreview && (
+              <div className="photo-preview">
+                <img src={nrcBackPreview} alt="NRC back preview" />
+              </div>
+            )}
+          </label>
+          <label className="field">
+            <span>NRC back side</span>
+            <input type="file" accept="image/jpeg,image/png" onChange={(e) => setNrcBack(e.target.files[0])} />
           </label>
           <button className="button button-success button-large" type="submit">Save profile</button>
           {profileMessage && <div className={`alert ${profileMessage.includes('✅') ? 'alert-success' : 'alert-error'}`}>{profileMessage}</div>}

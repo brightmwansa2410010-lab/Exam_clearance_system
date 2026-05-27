@@ -280,6 +280,16 @@ input::placeholder {
   margin-top: 12px;
 }
 
+.photo-preview {
+  margin-top: 8px;
+}
+.photo-preview img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
 @media (max-width: 760px) {
   .table-row {
     grid-template-columns: 1fr;
