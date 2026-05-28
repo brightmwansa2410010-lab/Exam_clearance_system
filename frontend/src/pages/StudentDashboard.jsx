@@ -135,101 +135,27 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
               </div>
             )}
           </label>
-          <label className="field">
-            <span>NRC back side</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => setNrcBack(e.target.files[0])} />
-          </label>
           <button className="button button-success button-large" type="submit">Save profile</button>
           {profileMessage && <div className={`alert ${profileMessage.includes('✅') ? 'alert-success' : 'alert-error'}`}>{profileMessage}</div>}
         </form>
       </div>
 
       <div className="card">
-        <div className="card-title">Complete your profile</div>
-        <form className="form" onSubmit={handleSaveProfile}>
+        <div className="card-title">New Clearance Request</div>
+        <form className="form" onSubmit={handleSubmit}>
           <label className="field">
-            <span>Student ID</span>
-            <input value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="e.g. 2024001" />
+            <span>Programme</span>
+            <input value={programme} onChange={(e) => setProgramme(e.target.value)} placeholder="e.g. BSc in Computer Science" required />
           </label>
           <label className="field">
-            <span>Study Mode</span>
-            <select value={studyMode} onChange={(e) => setStudyMode(e.target.value)}>
-              <option value="">-- Select Study Mode --</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Distance Learning">Distance Learning</option>
-              <option value="Evening">Evening</option>
-              <option value="Weekend">Weekend</option>
+            <span>Semester</span>
+            <select value={semester} onChange={(e) => setSemester(e.target.value)}>
+              <option value="Semester 1 — 2025/2026">Semester 1 — 2025/2026</option>
+              <option value="Semester 2 — 2025/2026">Semester 2 — 2025/2026</option>
             </select>
           </label>
-          <label className="field">
-            <span>Gender</span>
-            <select value={gender} onChange={(e) => setGender(e.target.value)}>
-              <option value="">-- Select Gender --</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>Passport photo</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setPassportPhoto(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setPassportPhotoPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setPassportPhotoPreview(null);
-              }
-            }} />
-            {passportPhotoPreview && (
-              <div className="photo-preview">
-                <img src={passportPhotoPreview} alt="Passport preview" />
-              </div>
-            )}
-          </label>
-          <label className="field">
-            <span>NRC front side</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setNrcFront(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setNrcFrontPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setNrcFrontPreview(null);
-              }
-            }} />
-            {nrcFrontPreview && (
-              <div className="photo-preview">
-                <img src={nrcFrontPreview} alt="NRC front preview" />
-              </div>
-            )}
-          </label>
-          <label className="field">
-            <span>NRC back side</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setNrcBack(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setNrcBackPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setNrcBackPreview(null);
-              }
-            }} />
-            {nrcBackPreview && (
-              <div className="photo-preview">
-                <img src={nrcBackPreview} alt="NRC back preview" />
-              </div>
-            )}
-          </label>
-          <button className="button button-success button-large" type="submit">Save profile</button>
-          {profileMessage && <div className={`alert ${profileMessage.includes('✅') ? 'alert-success' : 'alert-error'}`}>{profileMessage}</div>}
+          <button className="button button-primary button-large" type="submit">Submit request</button>
+          {message && <div className="alert alert-success">{message}</div>}
         </form>
       </div>
 
