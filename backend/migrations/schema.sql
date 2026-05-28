@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS requests (
   student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   programme TEXT NOT NULL,
   semester TEXT NOT NULL,
+  intake TEXT,
+  year_of_study TEXT,
   accounts_status TEXT NOT NULL DEFAULT 'pending',
   examiner_status TEXT NOT NULL DEFAULT 'pending',
   status TEXT NOT NULL DEFAULT 'pending'

@@ -64,7 +64,7 @@ router.post('/login', validateLoginInput, async (req, res) => {
     let result;
     if (email) {
       result = await db.query(
-        'SELECT id, name, email, password, role, student_id FROM users WHERE email = $1',
+        'SELECT id, name, email, password, role, student_id, nrc_number, study_mode, gender, profile_complete FROM users WHERE email = $1',
         [email]
       );
     } else {
@@ -96,6 +96,10 @@ router.post('/login', validateLoginInput, async (req, res) => {
         email: user.email,
         role: user.role,
         student_id: user.student_id,
+        nrc_number: user.nrc_number,
+        study_mode: user.study_mode,
+        gender: user.gender,
+        profile_complete: user.profile_complete,
       },
     });
 

@@ -55,7 +55,7 @@ router.post('/', validateRequestInput, async (req, res) => {
       return res.status(403).json({ error: 'Only students can submit requests.' });
     }
 
-    const { programme, semester } = req.body;
+    const { programme, semester, intake, year_of_study } = req.body;
 
     const existing = await db.query(
       'SELECT id FROM requests WHERE student_id = $1',
@@ -67,9 +67,9 @@ router.post('/', validateRequestInput, async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO requests (student_id, programme, semester)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [req.user.id, programme, semester]
+      `INSERT INTO requests (student_id, programme, semester, intake, year_of_study)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.user.id, programme, semester, intake || null, year_of_study || null]
     );
 
     res.status(201).json({ message: 'Request submitted!', request: result.rows[0] });
@@ -149,7 +149,8 @@ router.get('/:id/slip', async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT r.*, u.name AS student_name, u.student_id AS student_number
+      `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+              u.nrc_number, u.study_mode, u.gender
        FROM requests r
        JOIN users u ON r.student_id = u.id
        WHERE r.id = $1`,
@@ -173,80 +174,115 @@ router.get('/:id/slip', async (req, res) => {
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(res);
 
-    const pageW = doc.page.width;
-    const pageH = doc.page.height;
-    const darkGreen = '#0f4c0f';
-    const cream = '#f9f5e8';
-    const beige = '#e8e0cc';
-    const white = '#ffffff';
-    const dark = '#1a1a1a';
-    const muted = '#666666';
+    const pw = doc.page.width;
+    const ph = doc.page.height;
+    const system = {
+      primary: '#c0c1ff',
+      secondary: '#89ceff',
+      tertiary: '#ffb783',
+      error: '#ffb4ab',
+      surface: '#1c1b1b',
+      onSurface: '#e5e2e1',
+      onSurfaceVariant: '#c7c4d7',
+      bg: '#131313',
+      white: '#ffffff',
+      muted: '#908fa0',
+    };
 
-    doc.rect(0, 0, pageW, pageH).fill(cream);
+    doc.rect(0, 0, pw, ph).fill(system.bg);
 
-    doc.rect(0, 0, pageW, 85).fill(darkGreen);
-    doc.fillColor(white).font('Times-Bold').fontSize(32).text('ZUCT', 50, 18);
-    doc.fillColor('#c8e6c9').font('Times-Roman').fontSize(9).text('ZAMBIA UNIVERSITY COLLEGE OF TECHNOLOGY', 50, 56);
+    const gradTop = '#c0c1ff';
+    const gradBot = '#89ceff';
+    for (let y = 0; y < 90; y++) {
+      const t = y / 90;
+      const r = Math.round(parseInt(gradTop.slice(1, 3), 16) * (1 - t) + parseInt(gradBot.slice(1, 3), 16) * t);
+      const g = Math.round(parseInt(gradTop.slice(3, 5), 16) * (1 - t) + parseInt(gradBot.slice(3, 5), 16) * t);
+      const b = Math.round(parseInt(gradTop.slice(5, 7), 16) * (1 - t) + parseInt(gradBot.slice(5, 7), 16) * t);
+      const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+      doc.rect(0, y, pw, 1).fill(hex);
+    }
 
-    doc.fillColor(white).font('Helvetica-Bold').fontSize(14).text('CLEARED', pageW - 120, 30);
+    doc.fillColor('#0d0096').font('Helvetica-Bold').fontSize(30).text('ZUCT', 50, 18);
+    doc.fillColor('#07006c').font('Helvetica').fontSize(9).text('ZAMBIA UNIVERSITY COLLEGE OF TECHNOLOGY', 50, 56);
 
-    doc.rect(0, 85, pageW, 33).fill(beige);
-    doc.fillColor(dark).font('Helvetica-Bold').fontSize(11).text('EXAM CLEARANCE SLIP', 50, 93);
-    doc.fillColor(dark).font('Helvetica').fontSize(9).text(request.semester, pageW - 170, 93, { width: 120, align: 'right' });
-    doc.strokeColor('#c0b8a0').lineWidth(0.5).moveTo(50, 117).lineTo(pageW - 50, 117).stroke();
+    doc.fillColor('#0d0096').font('Helvetica-Bold').fontSize(13).text('CLEARED', pw - 125, 32);
 
-    const cardX = 50;
-    const cardY = 138;
-    const cardW = pageW - cardX * 2;
-    const cardH = 210;
-    doc.fillColor(white);
-    doc.roundedRect(cardX, cardY, cardW, cardH, 10).fill();
+    doc.rect(0, 90, pw, 38).fill(system.surface);
+    doc.fillColor(system.primary).font('Helvetica-Bold').fontSize(12).text('EXAM CLEARANCE SLIP', 50, 101);
+    doc.fillColor(system.onSurfaceVariant).font('Helvetica').fontSize(9).text(`Period: ${request.semester}`, pw - 170, 101, { width: 160, align: 'right' });
+    doc.strokeColor(system.muted).lineWidth(0.3).moveTo(50, 127).lineTo(pw - 50, 127).stroke();
 
-    const avatarX = cardX + 42;
-    const avatarY = cardY + 42;
-    const avatarR = 30;
-    doc.fillColor(darkGreen);
-    doc.circle(avatarX, avatarY, avatarR).fill();
+    const cx = 50;
+    const cy = 148;
+    const cw = pw - cx * 2;
+    const ch = 252;
+    doc.fillColor(system.surface);
+    doc.roundedRect(cx, cy, cw, ch, 12).fill();
+    doc.opacity(0.08).strokeColor('#ffffff').lineWidth(1).roundedRect(cx, cy, cw, ch, 12).stroke().opacity(1);
+
+    const ax = cx + 42;
+    const ay = cy + 42;
+    const ar = 30;
+    const gy = ay - ar;
+    for (let dy = 0; dy < ar * 2; dy++) {
+      const t = dy / (ar * 2);
+      const r = Math.round(parseInt(gradTop.slice(1, 3), 16) * (1 - t) + parseInt(gradBot.slice(1, 3), 16) * t);
+      const g = Math.round(parseInt(gradTop.slice(3, 5), 16) * (1 - t) + parseInt(gradBot.slice(3, 5), 16) * t);
+      const b = Math.round(parseInt(gradTop.slice(5, 7), 16) * (1 - t) + parseInt(gradBot.slice(5, 7), 16) * t);
+      const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+      const yOff = gy + dy;
+      const chord = Math.sqrt(Math.max(0, ar * ar - (dy - ar) * (dy - ar)));
+      doc.fillColor(hex).rect(ax - chord, yOff, chord * 2, 1).fill();
+    }
     const initials = request.student_name
       ? request.student_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
       : 'ST';
-    doc.fillColor(white).font('Times-Bold').fontSize(16).text(initials, avatarX - 12, avatarY - 10);
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(16).text(initials, ax - 12, ay - 10);
 
-    const nameX = avatarX + avatarR + 20;
-    doc.fillColor(dark).font('Times-Bold').fontSize(16).text(request.student_name, nameX, avatarY - 18);
-    doc.fillColor(muted).font('Courier').fontSize(10).text(`ID:  ${request.student_number || 'N/A'}`, nameX, avatarY + 6);
-    doc.fillColor(muted).font('Courier').fontSize(10).text(`PGM: ${request.programme}`, nameX, avatarY + 22);
-    doc.fillColor(muted).font('Courier').fontSize(10).text(`MODE: ${request.study_mode || 'N/A'}`, nameX, avatarY + 38);
-    doc.fillColor(muted).font('Courier').fontSize(10).text(`GENDER: ${request.gender || 'N/A'}`, nameX, avatarY + 54);
+    const nx = ax + ar + 20;
+    doc.fillColor(system.onSurface).font('Helvetica-Bold').fontSize(16).text(request.student_name, nx, ay - 18);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`ID:  ${request.student_number || 'N/A'}`, nx, ay + 6);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`PGM: ${request.programme}`, nx, ay + 22);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`MODE: ${request.study_mode || 'N/A'}`, nx, ay + 38);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`GENDER: ${request.gender || 'N/A'}`, nx, ay + 54);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`NRC:   ${request.nrc_number || 'N/A'}`, nx, ay + 70);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`INTAKE: ${request.intake || 'N/A'}`, nx, ay + 86);
+    doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(`YEAR:  ${request.year_of_study || 'N/A'}`, nx, ay + 102);
 
-    doc.strokeColor('#ddd').lineWidth(0.5);
-    doc.moveTo(cardX + 30, avatarY + 75).lineTo(cardX + cardW - 30, avatarY + 75).stroke();
+    doc.opacity(0.06).strokeColor('#ffffff').lineWidth(0.5);
+    doc.moveTo(cx + 30, ay + 124).lineTo(cx + cw - 30, ay + 124).stroke().opacity(1);
 
-    const rowX = cardX + 30;
-    let rowY = avatarY + 78;
-    const lineH = 32;
+    const rx = cx + 30;
+    let ry = ay + 127;
+    const lh = 32;
+
+    function badgeColor(status) {
+      if (status === 'approved') return system.secondary;
+      if (status === 'rejected') return system.error;
+      return system.tertiary;
+    }
 
     const rows = [
-      { label: 'Accounts', value: request.accounts_status, color: request.accounts_status === 'approved' ? darkGreen : '#e6a23c' },
-      { label: 'Examiner', value: request.examiner_status, color: request.examiner_status === 'approved' ? darkGreen : '#e6a23c' },
+      { label: 'Accounts', value: request.accounts_status },
+      { label: 'Examiner', value: request.examiner_status },
     ];
 
     rows.forEach((r) => {
-      doc.fillColor(muted).font('Courier').fontSize(10).text(r.label, rowX, rowY + 4);
-      const badgeW = 110;
-      doc.fillColor(r.color);
-      doc.roundedRect(cardX + cardW - 30 - badgeW, rowY, badgeW, 24, 6).fill();
-      doc.fillColor(white).font('Helvetica-Bold').fontSize(9).text(
+      doc.fillColor(system.onSurfaceVariant).font('Courier').fontSize(10).text(r.label, rx, ry + 4);
+      const bw = 110;
+      doc.fillColor(badgeColor(r.value));
+      doc.roundedRect(cx + cw - 30 - bw, ry, bw, 24, 6).fill();
+      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9).text(
         r.value === 'approved' ? 'APPROVED' : r.value.toUpperCase(),
-        cardX + cardW - 30 - badgeW + 12, rowY + 6
+        cx + cw - 30 - bw + 12, ry + 6
       );
-      rowY += lineH;
+      ry += lh;
     });
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    doc.fillColor(muted).font('Courier').fontSize(8).text(`Issued: ${dateStr} at ${timeStr}`, 50, pageH - 40, { align: 'center' });
+    doc.fillColor(system.muted).font('Courier').fontSize(8).text(`Issued: ${dateStr} at ${timeStr}`, 50, ph - 40, { align: 'center' });
 
     doc.end();
   } catch (error) {

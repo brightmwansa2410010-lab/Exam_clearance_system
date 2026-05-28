@@ -107,10 +107,10 @@ function App() {
     return false;
   };
 
-  const handleRequestSubmit = async (programme, semester) => {
+  const handleRequestSubmit = async (programme, semester, intake, year_of_study) => {
     const data = await apiFetch('/requests', token, {
       method: 'POST',
-      body: { programme, semester },
+      body: { programme, semester, intake, year_of_study },
     });
     if (data.error) return false;
     await loadRequests();
@@ -134,43 +134,52 @@ function App() {
     });
     if (data.error) return false;
 
-    const updatedUser = { ...user, student_id: studentIdNumber };
+    const updatedUser = { ...user, student_id: studentIdNumber, nrc_number: nrcNumber, study_mode: studyMode, gender };
     setUser(updatedUser);
     window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ user: updatedUser, token }));
     return true;
   };
 
   if (!user) {
-    return (
-      <div className="app-shell">
-        <Login onLogin={handleLogin} error={error} />
-      </div>
-    );
+    return <Login onLogin={handleLogin} error={error} />;
   }
 
   return (
-    <div className="app-shell">
-      <header className="header-card">
-        <div>
-          <div className="header-title">Exam Clearance System</div>
-          <div className="header-subtitle">Signed in as {user.name} <span className="role-badge">{user.role}</span></div>
+    <div className="min-h-screen bg-background">
+      <nav className="fixed top-0 w-full h-[72px] bg-surface/80 backdrop-blur-md border-b border-white/10 shadow-[0_0_20px_rgba(192,193,255,0.1)] z-50">
+        <div className="flex justify-between items-center h-full px-margin-desktop max-w-container-max mx-auto">
+          <div className="text-headline-md font-headline-md font-bold tracking-tight text-primary">Exam Clearance System</div>
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-4 text-on-surface-variant text-label-md font-label-md">
+              <span className="text-primary border-b-2 border-primary pb-1">Dashboard</span>
+            </div>
+            <div className="flex items-center gap-3 pl-6 border-l border-white/10">
+              <div className="text-right">
+                <p className="text-label-md font-label-md text-on-surface leading-none">{user.name}</p>
+                <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">{user.role === 'accounts' ? 'Accounts Officer' : user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm border border-primary/30">
+                {user.name?.split(' ').map(n => n[0]).slice(0, 2).join('') || 'U'}
+              </div>
+              <button onClick={logout} className="text-on-surface-variant hover:text-error transition-colors ml-2">
+                <span className="material-symbols-outlined">logout</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <button className="button button-outline" onClick={logout}>
-          Sign out
-        </button>
-      </header>
+      </nav>
 
-      {loading && <div className="alert">Loading requests...</div>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {loading && <div className="fixed top-[88px] left-1/2 -translate-x-1/2 z-40 bg-primary/20 text-primary text-label-md px-4 py-2 rounded-full border border-primary/30 backdrop-blur-md">Loading requests...</div>}
+      {error && <div className="fixed top-[88px] left-1/2 -translate-x-1/2 z-40 bg-error-container/20 text-error text-label-md px-4 py-2 rounded-full border border-error/30 backdrop-blur-md">{error}</div>}
 
       {user.role === 'student' && (
-        <StudentDashboard requests={requests} onSubmit={handleRequestSubmit} onProfileSave={handleProfileSave} user={user} token={token} />
+        <StudentDashboard requests={requests} onSubmit={handleRequestSubmit} onProfileSave={handleProfileSave} user={user} token={token} onLogout={logout} />
       )}
       {user.role === 'accounts' && (
-        <AccountsDashboard requests={requests} onAction={handleApproval} />
+        <AccountsDashboard requests={requests} onAction={handleApproval} user={user} />
       )}
       {user.role === 'examiner' && (
-        <ExaminerDashboard requests={requests} onAction={handleApproval} />
+        <ExaminerDashboard requests={requests} onAction={handleApproval} user={user} />
       )}
     </div>
   );

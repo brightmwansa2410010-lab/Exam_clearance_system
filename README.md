@@ -1,41 +1,122 @@
 # Exam Clearance System
 
-A simple full-stack web app for exam clearance using React, Express, and PostgreSQL.
+A full-stack web application for managing university exam clearance. Students submit clearance requests, Accounts Officers approve/reject finances, and Examiners give final approval.
 
-## Structure
+## Architecture
 
-- `backend/` - Express API server
-- `frontend/` - React app built with Vite
-- `backend/migrations/schema.sql` - PostgreSQL schema
+```
+frontend/  (React + Vite)  ──HTTP──>  backend/  (Express + pg)  ──SQL──>  PostgreSQL
+```
 
-## Backend setup
+- **Frontend**: React 18, Vite, vanilla CSS (dark theme)
+- **Backend**: Express.js, PostgreSQL (via `pg`), JWT auth, PDFKit
+- **Auth**: JWT tokens (8h expiry), stored in localStorage
 
-1. Copy `.env.example` to `.env` in `backend/`.
-2. Update `DATABASE_URL` and `JWT_SECRET`.
-3. Create the PostgreSQL database and tables:
-   - `psql -d your_database -f backend/migrations/schema.sql`
-4. Install dependencies:
-   - `cd backend && npm install`
-5. Start backend:
-   - `npm start`
+## Roles
 
-## Frontend setup
+| Role | Capabilities |
+|---|---|
+| **Student** | Register, complete profile (student ID, NRC, study mode, gender), submit clearance requests, download exam slip PDF |
+| **Accounts Officer** | View all requests, approve/reject at the accounts level |
+| **Examiner** | View accounts-approved requests, approve/reject at final level, export exam list PDF |
 
-1. Install dependencies:
-   - `cd frontend && npm install`
-2. Start frontend:
-   - `npm run dev`
-3. Open the browser at the URL shown by Vite.
+## Workflow
 
-## Usage
+```
+Student submits request  ──>  Accounts Officer approves  ──>  Examiner approves  ──>  Slip available
+```
 
-- Register as a student, accounts officer, or examiner.
-- Students submit exam clearance requests.
-- Accounts officer approves or rejects student requests.
-- Examiner reviews requests after accounts approval and gives final approval.
+If either Accounts or Examiner rejects, the request is rejected.
 
-## Notes
+## Database Schema
 
-- The backend uses JWT for simple auth.
-- The frontend stores login state in localStorage.
-- The system is designed to be easy to explain and extend.
+### `users`
+
+| Column | Type | Notes |
+|---|---|---|
+| id | SERIAL PK | |
+| name | TEXT NOT NULL | |
+| email | TEXT UNIQUE NOT NULL | |
+| password | TEXT NOT NULL | bcrypt hashed |
+| role | TEXT NOT NULL | `student`, `accounts`, `examiner` |
+| student_id | TEXT UNIQUE | student number |
+| nrc_number | TEXT UNIQUE | NRC number |
+| profile_complete | BOOLEAN | defaults to false |
+| study_mode | TEXT | Full-time, Part-time, etc. |
+| gender | TEXT | |
+
+### `requests`
+
+| Column | Type | Notes |
+|---|---|---|
+| id | SERIAL PK | |
+| student_id | INTEGER FK | references users(id) |
+| programme | TEXT NOT NULL | |
+| semester | TEXT NOT NULL | |
+| accounts_status | TEXT | `pending`, `approved`, `rejected` |
+| examiner_status | TEXT | `pending`, `approved`, `rejected` |
+| status | TEXT | computed: `pending`, `approved`, `rejected` |
+
+## API Endpoints
+
+### Auth (`/api/auth`)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | /register | No | Register new user |
+| POST | /login | No | Login, returns JWT |
+| PATCH | /profile | Student | Save student profile (ID, NRC, study mode, gender) |
+
+### Requests (`/api/requests`)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | / | All roles | List requests (filtered by role) |
+| POST | / | Student | Submit clearance request |
+| PATCH | /approve | Accounts/Examiner | Approve or reject |
+| GET | /:id/slip | All roles | Download exam slip PDF |
+
+## Setup
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL running on localhost:5432
+
+### Backend
+
+```bash
+cd backend
+cp .env.example .env        # edit DATABASE_URL and JWT_SECRET
+npm install
+node setup-db.js            # create database and tables
+node seed.js                # (optional) populate demo data
+npm start                   # starts on port 4000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev                 # starts on port 5173
+```
+
+## Demo Credentials
+
+After running `node seed.js`:
+
+| Role | Email | Password |
+|---|---|---|
+| Accounts Officer | accounts@example.com | password123 |
+| Examiner | examiner@example.com | password123 |
+| Student | chilufya@example.com | password123 |
+| Student | mary@example.com | password123 |
+| Student | john@example.com | password123 |
+| Student | grace@example.com | password123 |
+
+## Tech Stack
+
+- **Backend**: Express, pg, bcryptjs, jsonwebtoken, pdfkit, cors, dotenv
+- **Frontend**: React 18, Vite, jspdf
+- **Database**: PostgreSQL

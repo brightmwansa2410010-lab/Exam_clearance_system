@@ -25,6 +25,14 @@ async function runSchema(client) {
       ADD COLUMN IF NOT EXISTS gender TEXT;
     `);
     await client.query(`
+      ALTER TABLE requests
+      ADD COLUMN IF NOT EXISTS intake TEXT;
+    `);
+    await client.query(`
+      ALTER TABLE requests
+      ADD COLUMN IF NOT EXISTS year_of_study TEXT;
+    `);
+    await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS users_student_id_unique_idx ON users(student_id);
     `);
     await client.query(`
