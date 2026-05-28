@@ -1,17 +1,13 @@
 import { useState } from 'react';
+import { API_URL } from '../services/api';
 
-function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
+function StudentDashboard({ requests, onSubmit, onProfileSave, user, token }) {
   const [programme, setProgramme] = useState('');
   const [semester, setSemester] = useState('Semester 1 — 2025/2026');
   const [message, setMessage] = useState('');
 
   const [studentId, setStudentId] = useState(user?.student_id || '');
-  const [passportPhoto, setPassportPhoto] = useState(null);
-  const [passportPhotoPreview, setPassportPhotoPreview] = useState(null);
-  const [nrcFront, setNrcFront] = useState(null);
-  const [nrcFrontPreview, setNrcFrontPreview] = useState(null);
-  const [nrcBack, setNrcBack] = useState(null);
-  const [nrcBackPreview, setNrcBackPreview] = useState(null);
+  const [nrcNumber, setNrcNumber] = useState('');
   const [studyMode, setStudyMode] = useState('');
   const [gender, setGender] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
@@ -28,8 +24,8 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
   const handleSaveProfile = async (event) => {
     event.preventDefault();
     if (!studentId) { setProfileMessage('Student ID is required.'); return; }
-    if (!passportPhoto || !nrcFront || !nrcBack) { setProfileMessage('All documents are required.'); return; }
-    const success = await onProfileSave(studentId, passportPhoto, nrcFront, nrcBack);
+    if (!nrcNumber) { setProfileMessage('NRC Number is required.'); return; }
+    const success = await onProfileSave(studentId, nrcNumber, studyMode, gender);
     setProfileMessage(success ? '✅ Profile saved!' : 'Failed to save profile.');
     if (success) setTimeout(() => setProfileMessage(''), 3000);
   };
@@ -79,61 +75,8 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
             </select>
           </label>
           <label className="field">
-            <span>Passport photo</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setPassportPhoto(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setPassportPhotoPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setPassportPhotoPreview(null);
-              }
-            }} />
-            {passportPhotoPreview && (
-              <div className="photo-preview">
-                <img src={passportPhotoPreview} alt="Passport preview" />
-              </div>
-            )}
-          </label>
-          <label className="field">
-            <span>NRC front side</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setNrcFront(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setNrcFrontPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setNrcFrontPreview(null);
-              }
-            }} />
-            {nrcFrontPreview && (
-              <div className="photo-preview">
-                <img src={nrcFrontPreview} alt="NRC front preview" />
-              </div>
-            )}
-          </label>
-          <label className="field">
-            <span>NRC back side</span>
-            <input type="file" accept="image/jpeg,image/png" onChange={(e) => {
-              const file = e.target.files[0];
-              setNrcBack(file);
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => setNrcBackPreview(reader.result);
-                reader.readAsDataURL(file);
-              } else {
-                setNrcBackPreview(null);
-              }
-            }} />
-            {nrcBackPreview && (
-              <div className="photo-preview">
-                <img src={nrcBackPreview} alt="NRC back preview" />
-              </div>
-            )}
+            <span>NRC Number</span>
+            <input value={nrcNumber} onChange={(e) => setNrcNumber(e.target.value)} placeholder="e.g. 314368/71/1" required />
           </label>
           <button className="button button-success button-large" type="submit">Save profile</button>
           {profileMessage && <div className={`alert ${profileMessage.includes('✅') ? 'alert-success' : 'alert-error'}`}>{profileMessage}</div>}
@@ -183,11 +126,9 @@ function StudentDashboard({ requests, onSubmit, onProfileSave, user }) {
                 <div>
                   {request.status === 'approved' ? (
                     <button className="button button-sm button-success" onClick={async () => {
-                      const authToken = JSON.parse(localStorage.getItem('exam_clearance_user') || '{}').token || '';
-                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
                       try {
-                        const res = await fetch(`${apiUrl}/requests/${request.id}/slip`, {
-                          headers: { Authorization: `Bearer ${authToken}` },
+                        const res = await fetch(`${API_URL}/requests/${request.id}/slip`, {
+                          headers: { Authorization: `Bearer ${token}` },
                         });
                         if (!res.ok) throw new Error(await res.text());
                         const blob = await res.blob();

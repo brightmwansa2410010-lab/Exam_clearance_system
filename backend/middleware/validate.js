@@ -1,5 +1,5 @@
 function validateRegisterInput(req, res, next) {
-  const { name, email, password, role, student_id } = req.body;
+  const { name, email, password, role } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
     return res.status(400).json({ error: 'Name must be at least 2 characters.' });

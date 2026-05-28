@@ -13,37 +13,34 @@ router.get('/', async (req, res) => {
     const { id, role } = req.user;
     let result;
 
-     if (role === 'student') {
-       result = await db.query(
-         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
-                 u.study_mode, u.gender, r.courses_examined
-          FROM requests r
-          JOIN users u ON r.student_id = u.id
-          WHERE r.student_id = $1
-          ORDER BY r.id DESC`,
-         [id]
-       );
-     } else if (role === 'accounts') {
-       result = await db.query(
-         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
-                 u.study_mode, u.gender, r.courses_examined
-          FROM requests r
-          JOIN users u ON r.student_id = u.id
-          ORDER BY r.id DESC`
-       );
-     } else if (role === 'examiner') {
-       result = await db.query(
-         `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
-                 u.passport_photo_url, u.nrc_front_url, u.nrc_back_url,
-                 u.study_mode, u.gender, r.courses_examined
-          FROM requests r
-          JOIN users u ON r.student_id = u.id
-          WHERE r.accounts_status = 'approved'
-          ORDER BY r.id DESC`
-       );
-     }
+      if (role === 'student') {
+        result = await db.query(
+          `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                  u.nrc_number, u.study_mode, u.gender
+           FROM requests r
+           JOIN users u ON r.student_id = u.id
+           WHERE r.student_id = $1
+           ORDER BY r.id DESC`,
+          [id]
+        );
+      } else if (role === 'accounts') {
+        result = await db.query(
+          `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                  u.nrc_number, u.study_mode, u.gender
+           FROM requests r
+           JOIN users u ON r.student_id = u.id
+           ORDER BY r.id DESC`
+        );
+      } else if (role === 'examiner') {
+        result = await db.query(
+          `SELECT r.*, u.name AS student_name, u.student_id AS student_number,
+                  u.nrc_number, u.study_mode, u.gender
+           FROM requests r
+           JOIN users u ON r.student_id = u.id
+           WHERE r.accounts_status = 'approved'
+           ORDER BY r.id DESC`
+        );
+      }
 
     res.json({ requests: result.rows });
   } catch (error) {
@@ -245,11 +242,6 @@ router.get('/:id/slip', async (req, res) => {
       );
       rowY += lineH;
     });
-
-    // Courses examined row
-    doc.fillColor(muted).font('Courier').fontSize(10).text('COURSES', rowX, rowY + 4);
-    doc.fillColor(dark).font('Courier').fontSize(10).text(request.courses_examined || 'N/A', cardX + cardW - 30, rowY + 4, { width: 140, align: 'right' });
-    rowY += lineH;
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });

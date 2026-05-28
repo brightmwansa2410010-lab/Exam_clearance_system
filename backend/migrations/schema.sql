@@ -7,9 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('student', 'accounts', 'examiner')),
   student_id TEXT UNIQUE,
-  passport_photo_url TEXT,
-  nrc_front_url TEXT,
-  nrc_back_url TEXT,
+  nrc_number TEXT UNIQUE,
   profile_complete BOOLEAN DEFAULT FALSE,
   study_mode TEXT,
   gender TEXT
@@ -22,6 +20,5 @@ CREATE TABLE IF NOT EXISTS requests (
   semester TEXT NOT NULL,
   accounts_status TEXT NOT NULL DEFAULT 'pending',
   examiner_status TEXT NOT NULL DEFAULT 'pending',
-  status TEXT NOT NULL DEFAULT 'pending',
-  courses_examined TEXT
+  status TEXT NOT NULL DEFAULT 'pending'
 );

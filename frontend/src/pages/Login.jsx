@@ -12,7 +12,6 @@ function Login({ onLogin, error }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
-  const [studentId, setStudentId] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -20,8 +19,8 @@ function Login({ onLogin, error }) {
   };
 
   return (
-    <div className="card auth-card">
-      <div className="card-header">
+      <div className="card auth-card">
+      <div className="title">
         <div className="title">Exam clearance system</div>
         <div className="subtitle">Sign in to your account</div>
       </div>
@@ -73,7 +72,6 @@ function Login({ onLogin, error }) {
             setName('');
             setEmail('');
             setPassword('');
-            setStudentId('');
             setRole('student');
           }}
         >

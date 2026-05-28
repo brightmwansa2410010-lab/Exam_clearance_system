@@ -1,8 +1,6 @@
 function AccountsDashboard({ requests, onAction }) {
   const pending = requests.filter(r => r.accounts_status === 'pending').length;
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-
   return (
     <div>
       <div className="card">
@@ -28,12 +26,7 @@ function AccountsDashboard({ requests, onAction }) {
             {requests.map((request) => (
               <div className="table-row table-row-5" key={request.id}>
                 <div>{request.student_number || '-'}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {request.passport_photo_url && (
-                    <img src={`${apiUrl}${request.passport_photo_url}`} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                  )}
-                  {request.student_name}
-                </div>
+                <div>{request.student_name}</div>
                 <div>{request.programme}</div>
                 <div>
                   <span className={`badge badge-${request.accounts_status}`}>{request.accounts_status}</span>

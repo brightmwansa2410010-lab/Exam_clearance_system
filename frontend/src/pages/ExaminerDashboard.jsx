@@ -6,8 +6,6 @@ function ExaminerDashboard({ requests, onAction }) {
   const approved = filtered.filter(r => r.examiner_status === 'approved').length;
   const rejected = filtered.filter(r => r.examiner_status === 'rejected').length;
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-
   const handleExport = () => {
     if (filtered.length === 0) {
       alert('No requests to export');
@@ -119,12 +117,7 @@ function ExaminerDashboard({ requests, onAction }) {
             {filtered.map((request) => (
               <div className="table-row table-row-5" key={request.id}>
                 <div>{request.student_number || request.id}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {request.passport_photo_url && (
-                    <img src={`${apiUrl}${request.passport_photo_url}`} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                  )}
-                  {request.student_name}
-                </div>
+                <div>{request.student_name}</div>
                 <div>
                   <span className="badge badge-approved">{request.accounts_status}</span>
                 </div>

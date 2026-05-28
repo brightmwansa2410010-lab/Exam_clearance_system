@@ -19,9 +19,7 @@ async function runSchema(client) {
     await client.query(`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS student_id TEXT,
-      ADD COLUMN IF NOT EXISTS passport_photo_url TEXT,
-      ADD COLUMN IF NOT EXISTS nrc_front_url TEXT,
-      ADD COLUMN IF NOT EXISTS nrc_back_url TEXT,
+      ADD COLUMN IF NOT EXISTS nrc_number TEXT,
       ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN DEFAULT FALSE,
       ADD COLUMN IF NOT EXISTS study_mode TEXT,
       ADD COLUMN IF NOT EXISTS gender TEXT;
@@ -30,8 +28,7 @@ async function runSchema(client) {
       CREATE UNIQUE INDEX IF NOT EXISTS users_student_id_unique_idx ON users(student_id);
     `);
     await client.query(`
-      ALTER TABLE requests
-      ADD COLUMN IF NOT EXISTS courses_examined TEXT;
+      CREATE UNIQUE INDEX IF NOT EXISTS users_nrc_number_unique_idx ON users(nrc_number);
     `);
   console.log('✓ Schema loaded successfully');
 }

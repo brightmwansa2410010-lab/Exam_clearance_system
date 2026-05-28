@@ -67,12 +67,10 @@ function App() {
     }
   };
 
-  const handleLogin = async (email, password, isRegister, name, role, studentId) => {
+  const handleLogin = async (email, password, isRegister, name, role) => {
     const endpoint = isRegister ? '/auth/register' : '/auth/login';
     const body = isRegister
-      ? { name, email, password, role, student_id: studentId }
-      : studentId
-      ? { student_id: studentId, password }
+      ? { name, email, password, role }
       : { email, password };
     const data = await apiFetch(endpoint, '', { method: 'POST', body });
 
@@ -129,16 +127,10 @@ function App() {
     return true;
   };
 
-  const handleProfileSave = async (studentIdNumber, passportPhoto, nrcFront, nrcBack) => {
-    const formData = new FormData();
-    formData.append('student_id_number', studentIdNumber);
-    formData.append('passport_photo', passportPhoto);
-    formData.append('nrc_front', nrcFront);
-    formData.append('nrc_back', nrcBack);
-
+  const handleProfileSave = async (studentIdNumber, nrcNumber, studyMode, gender) => {
     const data = await apiFetch('/auth/profile', token, {
       method: 'PATCH',
-      body: formData,
+      body: { student_id_number: studentIdNumber, nrc_number: nrcNumber, study_mode: studyMode, gender },
     });
     if (data.error) return false;
 
@@ -172,7 +164,7 @@ function App() {
       {error && <div className="alert alert-error">{error}</div>}
 
       {user.role === 'student' && (
-        <StudentDashboard requests={requests} onSubmit={handleRequestSubmit} onProfileSave={handleProfileSave} user={user} />
+        <StudentDashboard requests={requests} onSubmit={handleRequestSubmit} onProfileSave={handleProfileSave} user={user} token={token} />
       )}
       {user.role === 'accounts' && (
         <AccountsDashboard requests={requests} onAction={handleApproval} />

@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
-const upload = require('../middleware/upload');
 const { validateRegisterInput, validateLoginInput } = require('../middleware/validate');
 const rateLimit = require('express-rate-limit');
 
@@ -106,38 +105,30 @@ router.post('/login', validateLoginInput, async (req, res) => {
   }
 });
 
-router.patch('/profile', authenticate, upload.fields([
-  { name: 'passport_photo', maxCount: 1 },
-  { name: 'nrc_front', maxCount: 1 },
-  { name: 'nrc_back', maxCount: 1 },
-]), async (req, res) => {
+router.patch('/profile', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'student') {
       return res.status(403).json({ error: 'Only students can update profiles.' });
     }
 
-    const student_id_number = req.body.student_id_number;
+    const { student_id_number, nrc_number, study_mode, gender } = req.body;
+
     if (!student_id_number || typeof student_id_number !== 'string' || student_id_number.trim().length < 1) {
       return res.status(400).json({ error: 'Student ID Number is required.' });
     }
-
-    if (!req.files || !req.files.passport_photo || !req.files.nrc_front || !req.files.nrc_back) {
-      return res.status(400).json({ error: 'All three files (passport photo, NRC front, NRC back) are required.' });
+    if (!nrc_number || typeof nrc_number !== 'string' || nrc_number.trim().length < 1) {
+      return res.status(400).json({ error: 'NRC Number is required.' });
     }
-
-    const passportUrl = '/uploads/' + req.files.passport_photo[0].filename;
-    const nrcFrontUrl = '/uploads/' + req.files.nrc_front[0].filename;
-    const nrcBackUrl = '/uploads/' + req.files.nrc_back[0].filename;
 
     await db.query(
       `UPDATE users
        SET student_id = $1,
-           passport_photo_url = $2,
-           nrc_front_url = $3,
-           nrc_back_url = $4,
+           nrc_number = $2,
+           study_mode = $3,
+           gender = $4,
            profile_complete = true
        WHERE id = $5`,
-      [student_id_number.trim(), passportUrl, nrcFrontUrl, nrcBackUrl, req.user.id]
+      [student_id_number.trim(), nrc_number.trim(), study_mode || null, gender || null, req.user.id]
     );
 
     res.json({ message: 'Profile updated successfully' });
